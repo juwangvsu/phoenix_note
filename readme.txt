@@ -3,6 +3,8 @@ run jackel stack:
 	cd phoenix/phoenix-r1/
 	source install/setup.bash
 	phxlaunch phoenix_launch experiment.xlaunch name:=romulus
+	xbox controller driving:
+		right upper trigger + left joystick
 
 sudo bash gimmeinternet.sh 
 
@@ -22,7 +24,9 @@ install prep:
 	./build-tools/install_ros_deps.sh
 
 normal workflow:
-	ssh to jackel, then run the phxlaunch
+	ssh robot@romulus to jackel, passwd BotLangBot!@#$
+	then run the phxlaunch
+	
 
 ------------ 6/9/22 hardware info --------------------------
 
