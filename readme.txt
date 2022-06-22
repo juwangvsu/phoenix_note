@@ -26,7 +26,39 @@ install prep:
 normal workflow:
 	ssh robot@romulus to jackel, passwd BotLangBot!@#$
 	then run the phxlaunch
-	
+
+-----6/21/22 build rerun -----------------------
+docker:
+	sudo mount -o remount,suid /media/student/dockerimg/
+	clone repo to elite for build
+	arldell csm_itmp branch build not work. rerun build
+	with master branch ok after reclone.
+
+--------6/19/22 mybag.launch ------------------------------
+from the main readme. important nodes:
+/samoyed/executor
+/samoyed/global_costmap
+/samoyed/global_planner
+/samoyed/map_c
+/samoyed/map_d
+/samoyed/nlu
+/samoyed/omnigraph
+/samoyed/point_cloud_pipeline/center_lidar_centroids
+	and 10 other nodes 
+
+topics:
+	/pose_graph
+/samoyed/assembled_cloud
+/samoyed/assembled_cloud_lowres
+
+bags/...bag topics:
+/samoyed/fast_assembled_cloud_lowres  pointcloud2, rviz ok
+
+/samoyed/full_cloud
+full node list:
+	nodelist.txt 	
+full topic list:
+	topiclist.txt 	
 
 ------------ 6/9/22 hardware info --------------------------
 
