@@ -1,4 +1,7 @@
 -------sticky 6/9/22 -------------------
+BIPB passwd: $1RDRL-CII-B2$
+baal passwd: BotLangBot!@#$
+
 run jackel stack:
 	cd phoenix/phoenix-r1/
 	source install/setup.bash
@@ -46,6 +49,46 @@ launch seq/pkgs:
 	drivers/platforms/husky/husky_control
 		launch/control.launch	----- (4.1)
 		launch/teleop.launch    ----- (4.2)
+----7/10/22  demo run hathor -------
+robot passwd: 1Amsrl-ci-cB2
+
+robot side: (main computer)
+	headless
+	baal: cdea_arl, headless, 6/2022, jackel (stock)
+	hathor: hotfix_tfprefix, headless, 6/2022, jackel (stock), clone-> hathor(c)
+	anubis: warty_test, with gdm, 1/2022, husky (nuvc), @baal
+		
+	ssh robot@hathor
+	phxlaunch aimm_mobility_experiments hardware_experiment.xlaunch name:=hathor attempt_match:=false     
+
+control station side:
+	
+	xhost +si:localuser:root
+	catkin-docker run
+		source docker-build/install/setup.bash
+		export ROS_MASTER_URI=http://hathor:11311
+		export ROS_IP=192.168.91.121
+	phxlaunch aimm_mobility_experiments control_station.xlaunch name:=hathor
+
+vision computer:
+	nuvo machine. 
+	seems a run a desktop with gdm
+	hathorvision: cdea_arl, wih gdm, jackel (nuvc), clone->hathorvision(c)
+	use ros feature machine to run nodes at a different computer
+
+jackel two computer setup:
+	drive chain -> main. alt conn: micro usb on the jackel drive chain port
+	main<-> vision: ethernet
+	lidar -> main.ethernet
+	bullet-> vision.ethernet
+
+	jackel main computer:
+		lidar, lidar pipeline, ommnimapper, navigation stack
+	jackel vision computer:
+		run perception_launch/launch/object_pipeline/object_detection.launch etc
+
+most freq:
+	vi control_station.xlaunch control.xlaunch robot.xlaunch
 
 -----6/21/22 build rerun -----------------------
 docker:
@@ -72,8 +115,10 @@ python3 build-tools/catkin_config/catkin_profile_build
 echo "active: phoenix" > .catkin_tools/profiles/profiles.yaml
 docker login registry.gitlab.sitcore.net:443
 docker pull registry.gitlab.sitcore.net:443/aimm/phoenix-r1/noetic/devel:master
->xhost +si:localuser:root
-catkin-docker run
+
+(docker run):
+(1) xhost +si:localuser:root
+(2) catkin-docker run
 	inside docker:
 		catkin build #this rebuild everyting, take long time
 			the output folder: docker-build, this is 
@@ -83,6 +128,20 @@ catkin-docker run
 		catkin build hardware_launch --no-deps #this rebuild part of it, fast
 
 switching branch build:
+	possible problem: when build multiple branch, they might confuse each other since
+		the build process use the same pat of docker storage to mount as 
+		"docker-build", if the same docker image is used to run "catkin build".
+		 so if we build master branch, then build cdea_arl... 
+		the later might fail due to the existing master build
+	arldell:
+		/media/student/data6/phoenix-cdea_arl_objectmapper
+		/media/student/data6/phoenix-master
+		/media/student/data6/phoenix-r1-0  --- mixedup
+		/media/student/data6/phoenix-r1  build cdea_arl_objectmapper nogood list index out of range
+		/media/student/data6/phoenix-r1.zip
+	lenova1:/media/student/data5/phoenix-2/phoenix-r1	cdea_arl_objectmapper
+		lenova1:/media/student/data5/phoenix-r1	csm_itmp, amino_ros fail
+
 	catkin clean
 	catkin build
 	might need to exit docker, checkout the branch, then build
@@ -94,6 +153,16 @@ switching branch build:
 				sudo apt install ros-noetic-sophus
 				build work.
 			or use a different docker image	
+	csm_ltmp: building...
+		customized docker file Dockerfile_amino
+		in docker:
+			git clone amino, make, make install..
+		catkin build
+			catkin build amino_ros
+			 still fail:
+			/amino-1.0/amino/rx/scene_gl.h:41:10: fatal error: SDL_opengl.h: No such file or directory
+			
+
 	master: build ok
 -------------------------------------------------
 
@@ -145,9 +214,37 @@ full topic list:
 
 ------------ 6/9/22 hardware info --------------------------
 
-	jackel ship with a mini-pc, intel i5, 8gb, geforce 1050
+	jackel ship with a mini-pc, intel i5, 8gb, 
+	gpu: geforce 1050 ti 4gb, 750, 730 from 1-4gb
 	John R. teams use an additional nuvo 7160 computer, which
 	is a intel nuc i7 up to 64 gb with gpu slot 
+
+network config:
+baal network interface:
+eno1:	192.168.10.50	lidar
+enp4s0:	192.168.90.168	wifi via bullet
+bullet:
+	bullet need to be connected to a ethernet port. The computer ethernet port should
+		be configured static ip (192.168.90.xxx). for two computers to comm, you 
+		need to know what ip you configured for it.
+
+the system check for both network interfaces at boot. if any of them not ready, booting will wait for 2 minutes
+before proceed.
+
+netplan: (baal)
+	/etc/netplan/01_default.yaml
+  2   ethernets:                                                                                                  
+  3     enp4s0:                                                                                                   
+  4       addresses: [192.168.90.168/23]                                                                          
+  5       gateway4: 192.168.90.1                                                                                  
+  6     enp3s0:                                                                                                   
+  7       addresses: [192.168.90.168/23]                                                                          
+  8       gateway4: 192.168.90.1                                                                                  
+  9     eno1:                                                                                                     
+ 10       addresses: [192.168.10.50/24]                                                                           
+ 11       #enx8cae4ce95092:                                                                                       
+ 12       #  addresses: [10.44.0.1/24]   
+
 	
 ------------ 6/9/22 hardware issues --------------------------
 
@@ -158,3 +255,35 @@ full topic list:
 			 new enough. history shows that this one is installed.
 
 		without gpu, boot up quick
+	baal, gpu display faulty, 4gb, ub20, headless (no x server)? startup long waiting for a job?
+if boot stuck, check systemd service    
+-----------------baal booting hang on network service ---------                                                                                         
+  2                                                                                                               
+  3 sudo systemctl enable systemd-networkd-wait-online.service                                                    
+  4   enable a service                                                                                            
+  5 systemctl  list-units --type=servicea                                                                         
+  6   list service showing status                                                                                 
+  7 sudo systemctl disable systemd-networkd-wait-online.service                                                   
+  8   disable service                                                                                             
+  9 systemd-analyze blamea                                                                                        
+ 10   show which service take how long time                                                                       
+ 11 sudo systemctl disable ptpd.service                                                                           
+ 12                                                                                                               
+ 13                                                                                                               
+ 14 ---- issue resolved ----------------                                                                          
+ 15 it turn out that the networkd-wait-online.service is required by the following services (they has a wanted and after tag in scrip
+ 16 so when starting these service, it will automatically trying to run networkd-wait-online service.             
+ 17 the one in charge of login tty is open-iscsi.service. so if we want a quick login  screen, we can just comment off the Wants and
+ 18 in script open-iscsi.service:                                                                                 
+ 19   vi /etc/systemd/system/sysinit.target.wants/open-iscsi.service                                              
+ 20 This service will proceed as long as the network interface have carrie status. so a quick hack would be plug  
+ 21 the network interface to any live ethernet port.                                                              
+ 22 normal boot for ball is about 48 secs.                                                                                                               
+ 21                                                                                                               
+ 22 systemd-networkd-wait-online.service                                                                          
+ 23 ● └─network-online.target                                                                                     
+ 24 ●   ├─clamav-freshclam.service                                                                                
+ 25 ●   ├─docker.service                                                                                          
+ 26 ●   ├─iscsid.service                                                                                          
+ 27 ●   ├─open-iscsi.service                                                                                      
+ 28 ●   └─ptpd.service           
