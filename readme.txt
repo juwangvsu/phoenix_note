@@ -74,6 +74,42 @@ launch seq/pkgs:
     # social navigation
   </rosarg>
 
+------7/25/22 infosploration test --------------
+changed up robot-robot-control topic management
+
+sobek:
+	phxlaunch infosploration hardware_experiment.xlaunch name:=sobek robot_id:=1 num_robots:=2 partition_mode:=3 peer_robot1:=sobek peer_robot2:=thoth name2:=thoth use_original_comms:=true
+
+control:
+	phxlaunch infosploration control_station.xlaunch num_robots:=2 use_original_comms:=true
+
+-----------------7/21/22 hathor infosploration --------
+@hathor:
+ phxlaunch infosploration hardware_experiment.xlaunch name:=hathor robot_id:=2 num_robots:=2 partition_mode:=3 peer_robot1:=sobek peer_robot2:=hathor experiment_params:=experiment_hardware.yaml
+ phxlaunch infosploration hardware_experiment.xlaunch name:=baal robot_id:=1 num_robots:=1 partition_mode:=2 peer_robot1:=baal  experiment_params:=experiment_hardware.yaml
+
+ setup baal:
+	infosploration/launch/hardware_experiment.xlaunch
+	hardware_launch/calibration/baal.yaml
+	hardware_launch/config/baal.yaml
+	
+
+ setup sobek:
+	hardware_experiment.xlaunch:
+	 reliable_comms" default="true"
+		this make use_service_discovery 'true'
+	
+@control station:
+	
+	to test a robot e.g., baal. edit unreliable_comms_laptop_include.launch's name1 etc.
+	note num_robots:=5 even if we only have baal on. but this is bad idea.
+	
+	unreliable_comms_laptop_include.launch
+		see readme_infosp.txt 7/22/22
+	phxlaunch infosploration control_station.xlaunch num_robots:=1
+		the name1... args passed to unreliable_comms_laptop_include.launch
+
+
 ----7/18/22  navigation config files  -------a
 	launch-files/aimm_mobility_experiments/launch
 		hardware_experiment.xlaunch
@@ -100,6 +136,13 @@ optin install:
 	note on unity simulator:
 		the object detection is the ground truth from the unity command, so
 		it did not really run the object detection node.
+simple simulator run:
+	~/Documents/phoenix-hub/phoenix-master/phoenix-r1$ src/simulation/unity/arl-unity-ros/arl_unity_simulator/bin/arl-unity-robotics.x86_64
+	this will bring a unity game. click scene to load scene. click spawn to put a robot in the world.
+	three scenes shipped
+	see unity_game.png
+another sim run:
+	phxlaunch phoenix_unity_launch experiment.xlaunch launch_unity:=true environment:=lejeune_emout
 	
 ----7/10/22  demo run hathor -------
 robot passwd: 1Amsrl-ci-cB2
@@ -109,6 +152,8 @@ robot side: (main computer)
 	baal: cdea_arl, headless, 6/2022, jackel (stock)
 	hathor: hotfix_tfprefix, headless, 6/2022, jackel (stock), clone-> hathor(c)
 	anubis: warty_test, with gdm, 1/2022, husky (nuvc), @baal
+	sobek:  nuvo computer
+	sobekvision: not used
 		
 	ssh robot@hathor
 	phxlaunch aimm_mobility_experiments hardware_experiment.xlaunch name:=hathor attempt_match:=false     
@@ -145,6 +190,8 @@ jackel two computer setup:
 
 most freq:
 	vi control_station.xlaunch control.xlaunch robot.xlaunch
+
+
 
 ----7/13/22 testing some perception pkgs ---------------------
 https://gitlab.sitcore.net/aimm/phoenix-r1/-/blob/master/src/perception/models/README.md
@@ -291,6 +338,11 @@ full topic list:
 	John R. teams use an additional nuvo 7160 computer, which
 	is a intel nuc i7 up to 64 gb with gpu slot 
 
+microstrain imu sensor test:
+	roslaunch microstrain_quicktest.launch name:=baal sensor_name:=/baal/imu
+	or rosrun arl_microstrain microstrain_node _port:=/dev/imu
+	check Imu data, it contain quaternion
+
 network config:
 baal network interface:
 eno1:	192.168.10.50	lidar
@@ -395,3 +447,14 @@ Bullet performance: laptop <-> robot @ 202 4 doors apart 1.8 MB/S,
 rosparam dump | grep 0\.2 
 grep -rI Primitive\ resolution\ 
 	grep over all files containing "Primitive resolution"
+
+docker commit: save local change. persistant until a new docker pull
+	docker commit b52e72fd63c6 registry.gitlab.sitcore.net:443/aimm/phoenix-r1/noetic/devel:master
+
+imu gx5 might interfere with computer booting. 
+	solution: unplug gx5 during boot/reboot
+
+launch files nested dump: useful to find which launch files are used and what node are created:
+	ex: baal_launch_expanded.txt
+	phx-launch -d 10 infosploration hardware_experiment.xlaunch name:=baal robot_id:=1 num_robots:=1 partition_mode:=2 peer_robot1:=baal > baal_launch_expanded.txt
+
